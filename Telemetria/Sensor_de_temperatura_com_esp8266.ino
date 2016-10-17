@@ -12,20 +12,18 @@ void setup()
 {
   Serial.begin(9600);
   esp8266.begin(19200);
-
-  sendData("AT+RST\r\n", 2000, DEBUG); // rst
-  sendData("AT+CWLAP\r\n", 1000, DEBUG);
-  // Conecta a rede wireless
-  sendData("AT+CWJAP=\"El Lord del Universo\",\"12345678\"\r\n", 2000, DEBUG);
+  
+  //Toda essa sessão corresponde ao envio de dados para o modulo
+  sendData("AT+RST\r\n", 2000, DEBUG); // Comando de RST
+  sendData("AT+CWLAP\r\n", 1000, DEBUG); //Busca de redes Wireless proximas
+  sendData("AT+CWJAP=\"El Lord del Universo\",\"12345678\"\r\n", 2000, DEBUG); /*Conexão ao access point 
+                                                                                 (Exemplo: AT+CWJAP=”nomedarede”,”senhadarede”)*/
   delay(3000);
   
-  sendData("AT+CWMODE=1\r\n", 1000, DEBUG);
-  // Mostra o endereco IP
-  sendData("AT+CIFSR\r\n", 1000, DEBUG);
-  // Configura para multiplas conexoes
-  sendData("AT+CIPMUX=1\r\n", 1000, DEBUG);
-  // Inicia o web server na porta 80
-  sendData("AT+CIPSERVER=1,80\r\n", 1000, DEBUG);
+  sendData("AT+CWMODE=1\r\n", 1000, DEBUG); //configura o modulo para funcionar em STA (Station)
+  sendData("AT+CIFSR\r\n", 1000, DEBUG);  // Mostra o endereco IP
+  sendData("AT+CIPMUX=1\r\n", 1000, DEBUG); // Configura para multiplas conexoes
+  sendData("AT+CIPSERVER=1,80\r\n", 1000, DEBUG); // Inicia o web server na porta 80
 }
 
 void loop()
@@ -33,12 +31,13 @@ void loop()
   // Verifica se o ESP8266 esta enviando dados
   if (esp8266.available())
   {
-    if (esp8266.find("+IPD,"))
+    if (esp8266.find("+IPD,")) //Esse verifica o recebimento de dados
     {
       delay(300);
-      int connectionId = esp8266.read() - 48;
+      int connectionId = esp8266.read() - 48; 
 
-      String webpage = "<head><meta http-equiv=""refresh"" content=""3"">";
+      //Cria pagina web
+      String webpage = "<head><meta http-equiv=""refresh"" content=""3"">"; 
       webpage += "</head><h1><u>Sensor de temperatura</u></h1><h2>";
       webpage += "Temperatura: ";
       temperatura = (float(analogRead(LM35))*5/(1023))/0.01;
@@ -48,7 +47,7 @@ void loop()
       webpage += a;
       webpage += "ºC";
 
-      String cipSend = "AT+CIPSEND=";
+      String cipSend = "AT+CIPSEND="; //Comando de envio de dados pela serial do ESP
       cipSend += connectionId;
       cipSend += ",";
       cipSend += webpage.length();
@@ -57,8 +56,8 @@ void loop()
       sendData(cipSend, 1000, DEBUG);
       sendData(webpage, 1000, DEBUG);
 
-      String closeCommand = "AT+CIPCLOSE=";
-      closeCommand += connectionId; // append connection id
+      String closeCommand = "AT+CIPCLOSE="; //Encerra a conexão com o modulo
+      closeCommand += connectionId;
       closeCommand += "\r\n";
 
       sendData(closeCommand, 3000, DEBUG);
@@ -66,7 +65,7 @@ void loop()
   }
 }
 
-String sendData(String command, const int timeout, boolean debug)
+String sendData(String command, const int timeout, boolean debug) //Função para o envio de dados do arduino para a placa.
 {
   // Envio dos comandos AT para o modulo
   String response = "";
@@ -76,8 +75,7 @@ String sendData(String command, const int timeout, boolean debug)
   {
     while (esp8266.available())
     {
-      // The esp has data so display its output to the serial window
-      char c = esp8266.read(); // read the next character.
+      char c = esp8266.read(); //Leitura de cada caracter enviado ao modulo.
       response += c;
     }
   }
